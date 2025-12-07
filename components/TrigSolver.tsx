@@ -79,12 +79,57 @@ const TrigSolver: React.FC = () => {
         </div>
       </div>
       
-      <div className="mt-0 pt-4 border-t border-slate-200 bg-slate-50 p-4 text-center">
-        <h5 className="text-sm font-bold text-slate-700 mb-2">Mathematical Formula</h5>
-        <div className="inline-block bg-white px-6 py-3 rounded border border-slate-200 shadow-sm">
-           <code className="text-lg font-serif">A cos(θ) + B sin(θ) + C = 0</code>
+      <div className="mt-0 pt-6 border-t border-slate-200 bg-slate-50 p-6 rounded text-left">
+        <h5 className="text-lg font-bold text-slate-800 mb-4">Derivation & Solution</h5>
+        
+        <div className="space-y-6 text-sm text-slate-700">
+            <p>To solve the equation <b className="font-serif">A cos(θ) + B sin(θ) + C = 0</b>, we use the half-angle substitution:</p>
+            
+            <div className="bg-white p-4 rounded border border-slate-200 flex flex-col items-center gap-4">
+                <div className="text-base">Let <b className="font-serif">t = tan(θ/2)</b></div>
+                <div className="flex gap-12 font-serif text-base">
+                    <div className="flex items-center gap-2">
+                        <span>cos(θ) = </span>
+                        <div className="flex flex-col items-center">
+                            <span className="border-b border-slate-800 px-1">1 - t²</span>
+                            <span>1 + t²</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span>sin(θ) = </span>
+                        <div className="flex flex-col items-center">
+                            <span className="border-b border-slate-800 px-1">2t</span>
+                            <span>1 + t²</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p>Substituting these into the original equation converts it into a quadratic polynomial in terms of <b className="font-serif">t</b>:</p>
+            
+            <div className="text-center font-serif text-lg bg-white p-3 rounded border border-slate-200 shadow-sm">
+                (C - A)t² + 2Bt + (C + A) = 0
+            </div>
+
+            <p>The solution for <b className="font-serif">t</b> is given by:</p>
+
+            <div className="flex justify-center">
+                 <div className="flex items-center text-lg font-serif bg-white px-6 py-4 rounded border border-slate-200 shadow-sm">
+                    <span className="mr-3">t = </span>
+                    <div className="flex flex-col items-center">
+                        <div className="border-b border-slate-800 px-2 pb-1 mb-1">
+                             -B ± <span className="inline-block">√<span className="border-t border-slate-800 pt-px ml-0.5" style={{borderTopWidth: '1px'}}>A² + B² - C²</span></span>
+                        </div>
+                        <div>C - A</div>
+                    </div>
+                </div>
+            </div>
+
+            <p>Finally, we retrieve the angle <b className="font-serif">θ</b> (providing two possible solutions):</p>
+            <div className="text-center font-serif text-lg font-bold text-indigo-900">
+                θ = 2 arctan(t)
+            </div>
         </div>
-        <p className="text-xs text-slate-500 mt-2">Converted to polynomial via substitution: <code className="bg-slate-200 px-1 rounded">t = tan(θ/2)</code></p>
       </div>
     </div>
   );

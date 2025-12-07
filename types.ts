@@ -9,7 +9,8 @@ export enum Tab {
   VECTORS = 'Vectors',
   QUADRATIC = 'Quadratic',
   TRIG_SOLVER = 'Trig Solver',
-  TUTOR = 'AI Tutor'
+  TUTOR = 'AI Tutor',
+  QUIZ = 'Quiz'
 }
 
 export interface Point {

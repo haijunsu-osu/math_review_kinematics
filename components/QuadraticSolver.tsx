@@ -82,8 +82,16 @@ const QuadraticSolver: React.FC = () => {
 
       <div className="mt-0 pt-4 border-t border-slate-200 bg-slate-50 p-4 text-center">
         <h5 className="text-sm font-bold text-slate-700 mb-2">Mathematical Formula</h5>
-        <div className="inline-block bg-white px-6 py-3 rounded border border-slate-200 shadow-sm">
-           <code className="text-lg font-serif">{'x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}'}</code>
+        <div className="inline-block bg-white px-8 py-4 rounded border border-slate-200 shadow-sm">
+           <div className="flex items-center text-lg font-serif">
+             <span className="mr-3">x = </span>
+             <div className="flex flex-col items-center">
+               <div className="border-b border-slate-800 pb-1 mb-1 px-1">
+                 -b ± <span className="inline-block">√<span className="border-t border-slate-800 pt-px ml-0.5" style={{borderTopWidth: '1px'}}>b² - 4ac</span></span>
+               </div>
+               <div>2a</div>
+             </div>
+           </div>
         </div>
       </div>
     </div>
