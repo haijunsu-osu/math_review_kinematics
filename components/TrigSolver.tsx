@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { generateTrigFunctionData, solveTrigEquation, round } from '../utils/mathUtils';
@@ -9,6 +10,7 @@ const TrigSolver: React.FC = () => {
 
   const data = generateTrigFunctionData(A, B, C);
   const roots = solveTrigEquation(A, B, C);
+  const discriminantTerm = A * A + B * B - C * C;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -58,6 +60,10 @@ const TrigSolver: React.FC = () => {
                       ))}
                   </ul>
               )}
+            </div>
+
+            <div className={`p-4 rounded-lg border text-sm font-medium ${discriminantTerm >= 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+              Discriminant Term (D'): {round(discriminantTerm)}
             </div>
           </div>
 
@@ -111,7 +117,7 @@ const TrigSolver: React.FC = () => {
                 (C - A)t² + 2Bt + (C + A) = 0
             </div>
 
-            <p>The solution for <b className="font-serif">t</b> is given by:</p>
+            <p>The solution for <b className="font-serif">t</b> is given by the quadratic formula where the discriminant is determined by the term <b className="font-serif">Δ' = A² + B² - C²</b>:</p>
 
             <div className="flex justify-center">
                  <div className="flex items-center text-lg font-serif bg-white px-6 py-4 rounded border border-slate-200 shadow-sm">
@@ -125,10 +131,33 @@ const TrigSolver: React.FC = () => {
                 </div>
             </div>
 
-            <p>Finally, we retrieve the angle <b className="font-serif">θ</b> (providing two possible solutions):</p>
-            <div className="text-center font-serif text-lg font-bold text-indigo-900">
-                θ = 2 arctan(t)
+            <h5 className="text-base font-bold text-slate-800 mt-8 mb-4 flex items-center gap-2">
+               <span className="bg-slate-800 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">!</span>
+               Physical Interpretation of the Discriminant
+            </h5>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border-2 border-emerald-100 bg-emerald-50 shadow-sm">
+                    <div className="text-emerald-700 font-bold mb-2">A² + B² - C² > 0</div>
+                    <p className="text-xs text-slate-600 mb-2 font-bold uppercase tracking-wide">Two Real Solutions</p>
+                    <p className="text-slate-700">The mechanism has <b>two distinct assembly modes</b> (e.g., "elbow-up" and "elbow-down"). Both configurations satisfy the loop closure.</p>
+                </div>
+                <div className="p-4 rounded-xl border-2 border-amber-100 bg-amber-50 shadow-sm">
+                    <div className="text-amber-700 font-bold mb-2">A² + B² - C² = 0</div>
+                    <p className="text-xs text-slate-600 mb-2 font-bold uppercase tracking-wide">One Real Solution</p>
+                    <p className="text-slate-700">The mechanism is in a <b>limit position</b> or singular configuration. The two assembly modes have merged into one unique position.</p>
+                </div>
+                <div className="p-4 rounded-xl border-2 border-rose-100 bg-rose-50 shadow-sm">
+                    <div className="text-rose-700 font-bold mb-2">A² + B² - C² &lt; 0</div>
+                    <p className="text-xs text-slate-600 mb-2 font-bold uppercase tracking-wide">No Real Solutions</p>
+                    <p className="text-slate-700">The mechanism <b>cannot be assembled</b>. The links are either too short to close the loop or too long to fit in the specified space.</p>
+                </div>
             </div>
+            
+            <p className="italic text-slate-500 text-xs mt-4">
+               Note: In planar kinematic analysis, A, B, and C are typically functions of link lengths and one or more independent angles (like the input crank angle). 
+               Changing the input angle changes these coefficients, potentially moving the mechanism from a dual-solution region into a singular point and then into an impossible assembly region.
+            </p>
         </div>
       </div>
     </div>
