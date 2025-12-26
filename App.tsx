@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tab } from './types';
 import CoordinateConverter from './components/CoordinateConverter';
@@ -5,6 +6,7 @@ import Atan2Visualizer from './components/Atan2Visualizer';
 import VectorAlgebra from './components/VectorAlgebra';
 import QuadraticSolver from './components/QuadraticSolver';
 import TrigSolver from './components/TrigSolver';
+import CosineLawVisualizer from './components/CosineLawVisualizer';
 import GeminiTutor from './components/GeminiTutor';
 import Quiz from './components/Quiz';
 
@@ -40,6 +42,7 @@ const App: React.FC = () => {
       case Tab.VECTORS: return <VectorAlgebra />;
       case Tab.QUADRATIC: return <QuadraticSolver />;
       case Tab.TRIG_SOLVER: return <TrigSolver />;
+      case Tab.COSINE_LAW: return <CosineLawVisualizer />;
       case Tab.TUTOR: return <GeminiTutor />;
       case Tab.QUIZ: return <Quiz />;
       default: return <CoordinateConverter />;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 
@@ -51,7 +52,8 @@ const GeminiTutor: React.FC = () => {
     const win = window as any;
     if (win.aistudio && win.aistudio.openSelectKey) {
       await win.aistudio.openSelectKey();
-      setHasKey(true); // Optimistic update as per instructions
+      // Assume the key selection was successful after triggering openSelectKey() as per instructions
+      setHasKey(true); 
     }
   };
 
@@ -64,11 +66,11 @@ const GeminiTutor: React.FC = () => {
     setLoading(true);
 
     try {
-      // Re-instantiate to ensure key is fresh
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Create a new GoogleGenAI instance right before making an API call to ensure it uses the most up-to-date API key.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const chat = ai.chats.create({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-preview',
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
         },
@@ -78,16 +80,20 @@ const GeminiTutor: React.FC = () => {
         }))
       });
 
-      const result = await chat.sendMessage({ message: userMsg });
-      const responseText = result.text;
+      const response = await chat.sendMessage({ message: userMsg });
+      // Property access .text instead of .text()
+      const responseText = response.text;
 
-      setMessages(prev => [...prev, { role: 'model', text: responseText }]);
-    } catch (error) {
+      if (responseText) {
+        setMessages(prev => [...prev, { role: 'model', text: responseText }]);
+      }
+    } catch (error: any) {
       console.error("Gemini Error:", error);
       setMessages(prev => [...prev, { role: 'model', text: "Sorry, I encountered an error. Please try again or check your API key." }]);
-      const win = window as any;
-      if (win.aistudio) {
-          setHasKey(false);
+      
+      // If the request fails with a specific error message, prompt for key selection again.
+      if (error?.message?.includes("Requested entity was not found")) {
+        setHasKey(false);
       }
     } finally {
       setLoading(false);

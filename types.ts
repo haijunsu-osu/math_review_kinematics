@@ -1,3 +1,4 @@
+
 export interface Vector2D {
   x: number;
   y: number;
@@ -9,6 +10,7 @@ export enum Tab {
   VECTORS = 'Vectors',
   QUADRATIC = 'Quadratic',
   TRIG_SOLVER = 'Trig Solver',
+  COSINE_LAW = 'Cosine Law',
   TUTOR = 'AI Tutor',
   QUIZ = 'Quiz'
 }
