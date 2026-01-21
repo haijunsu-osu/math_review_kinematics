@@ -1,17 +1,78 @@
-import React, { useState, useRef } from 'react';
-import { round } from '../utils/mathUtils';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { round, toDegrees, toRadians } from '../utils/mathUtils';
 
 const VectorAlgebra: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'add' | 'dist'>('add');
   const svgRef = useRef<SVGSVGElement>(null);
   
-  // State for Vector Addition
+  // State for Vector Addition (Cartesian source of truth)
   const [v1, setV1] = useState({ x: 3, y: 2 });
   const [v2, setV2] = useState({ x: 2, y: 4 });
   
-  // State for Distance
+  // Local string inputs for Vector A & B to allow arbitrary typing
+  const [v1Str, setV1Str] = useState({ x: '3', y: '2', r: '3.61', th: '33.69' });
+  const [v2Str, setV2Str] = useState({ x: '2', y: '4', r: '4.47', th: '63.43' });
+
+  // State for Distance Points
   const [p1, setP1] = useState({ x: -2, y: -2 });
   const [p2, setP2] = useState({ x: 4, y: 3 });
+  const [p1Str, setP1Str] = useState({ x: '-2', y: '-2' });
+  const [p2Str, setP2Str] = useState({ x: '4', y: '3' });
+
+  // Sync string inputs when coordinate state changes (e.g., from dragging)
+  useEffect(() => {
+    const r1 = Math.sqrt(v1.x**2 + v1.y**2);
+    const th1 = toDegrees(Math.atan2(v1.y, v1.x));
+    setV1Str({ x: v1.x.toString(), y: v1.y.toString(), r: round(r1).toString(), th: round(th1).toString() });
+  }, [v1]);
+
+  useEffect(() => {
+    const r2 = Math.sqrt(v2.x**2 + v2.y**2);
+    const th2 = toDegrees(Math.atan2(v2.y, v2.x));
+    setV2Str({ x: v2.x.toString(), y: v2.y.toString(), r: round(r2).toString(), th: round(th2).toString() });
+  }, [v2]);
+
+  useEffect(() => {
+    setP1Str({ x: p1.x.toString(), y: p1.y.toString() });
+  }, [p1]);
+
+  useEffect(() => {
+    setP2Str({ x: p2.x.toString(), y: p2.y.toString() });
+  }, [p2]);
+
+  // Handle committing values from inputs
+  const commitV1 = (mode: 'cartesian' | 'polar') => {
+    if (mode === 'cartesian') {
+      setV1({ x: parseFloat(v1Str.x) || 0, y: parseFloat(v1Str.y) || 0 });
+    } else {
+      const r = parseFloat(v1Str.r) || 0;
+      const th = parseFloat(v1Str.th) || 0;
+      const rad = toRadians(th);
+      setV1({ x: round(r * Math.cos(rad)), y: round(r * Math.sin(rad)) });
+    }
+  };
+
+  const commitV2 = (mode: 'cartesian' | 'polar') => {
+    if (mode === 'cartesian') {
+      setV2({ x: parseFloat(v2Str.x) || 0, y: parseFloat(v2Str.y) || 0 });
+    } else {
+      const r = parseFloat(v2Str.r) || 0;
+      const th = parseFloat(v2Str.th) || 0;
+      const rad = toRadians(th);
+      setV2({ x: round(r * Math.cos(rad)), y: round(r * Math.sin(rad)) });
+    }
+  };
+
+  const commitP1 = () => setP1({ x: parseFloat(p1Str.x) || 0, y: parseFloat(p1Str.y) || 0 });
+  const commitP2 = () => setP2({ x: parseFloat(p2Str.x) || 0, y: parseFloat(p2Str.y) || 0 });
+
+  const handleKeyDown = (e: React.KeyboardEvent, callback: () => void) => {
+    if (e.key === 'Enter') {
+      callback();
+      (e.target as HTMLInputElement).blur();
+    }
+  };
 
   // Dragging state
   const [dragging, setDragging] = useState<string | null>(null);
@@ -20,145 +81,109 @@ const VectorAlgebra: React.FC = () => {
   const center = size / 2;
   const scale = 25;
 
-  // Vector Result
   const vR = { x: v1.x + v2.x, y: v1.y + v2.y };
-  
-  // Distance Result
   const distance = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 
   const handlePointerDown = (id: string, e: React.PointerEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setDragging(id);
     (e.target as Element).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragging || !svgRef.current) return;
-
     const rect = svgRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const mathX = round((mouseX - center) / scale);
-    const mathY = round(-(mouseY - center) / scale);
+    const mathX = round((e.clientX - rect.left - center) / scale);
+    const mathY = round(-(e.clientY - rect.top - center) / scale);
 
     if (activeTab === 'add') {
-      if (dragging === 'v1') {
-        // Dragging head of V1
-        setV1({ x: mathX, y: mathY });
-      } else if (dragging === 'v2') {
-        // Dragging head of V2 (which is at V1 + V2)
-        // New V2 = MousePos - V1
-        setV2({ x: mathX - v1.x, y: mathY - v1.y });
-      }
+      if (dragging === 'v1') setV1({ x: mathX, y: mathY });
+      else if (dragging === 'v2') setV2({ x: mathX - v1.x, y: mathY - v1.y });
     } else {
-      if (dragging === 'p1') {
-        setP1({ x: mathX, y: mathY });
-      } else if (dragging === 'p2') {
-        setP2({ x: mathX, y: mathY });
-      }
+      if (dragging === 'p1') setP1({ x: mathX, y: mathY });
+      else if (dragging === 'p2') setP2({ x: mathX, y: mathY });
     }
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    setDragging(null);
-    (e.target as Element).releasePointerCapture(e.pointerId);
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="flex border-b border-slate-200">
-        <button 
-          onClick={() => setActiveTab('add')}
-          className={`flex-1 py-3 font-semibold text-sm ${activeTab === 'add' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
-        >
-          Vector Addition
-        </button>
-        <button 
-          onClick={() => setActiveTab('dist')}
-          className={`flex-1 py-3 font-semibold text-sm ${activeTab === 'dist' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
-        >
-          Distance Between Points
-        </button>
+        <button onClick={() => setActiveTab('add')} className={`flex-1 py-3 font-semibold text-sm ${activeTab === 'add' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>Vector Addition</button>
+        <button onClick={() => setActiveTab('dist')} className={`flex-1 py-3 font-semibold text-sm ${activeTab === 'dist' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}>Distance Between Points</button>
       </div>
 
       <div className="p-6">
         {activeTab === 'add' ? (
           <div className="flex flex-col md:flex-row gap-8">
             <div className="w-full md:w-1/3 space-y-4">
-              <h3 className="font-bold text-lg text-slate-800">Head-to-Tail Rule</h3>
-              <p className="text-sm text-slate-600">Drag the vector heads to explore addition.</p>
+              <h3 className="font-bold text-lg text-slate-800">Vector Addition Tools</h3>
+              <p className="text-xs text-slate-600 italic">Press <b>Enter</b> to confirm changes and sync coordinate systems.</p>
               
-              <div className="p-3 bg-blue-50 rounded border border-blue-100">
-                <div className="font-semibold text-blue-900 text-sm mb-2">Vector A</div>
-                <div className="flex gap-2">
-                  <input type="number" value={v1.x} onChange={e => setV1({...v1, x: parseFloat(e.target.value)||0})} className="w-1/2 p-1 border rounded text-sm" placeholder="x"/>
-                  <input type="number" value={v1.y} onChange={e => setV1({...v1, y: parseFloat(e.target.value)||0})} className="w-1/2 p-1 border rounded text-sm" placeholder="y"/>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="font-bold text-blue-900 text-sm mb-3">Vector A</div>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-blue-700 uppercase">Cartesian x</label>
+                    <input type="text" value={v1Str.x} onChange={e => setV1Str({...v1Str, x: e.target.value})} onBlur={() => commitV1('cartesian')} onKeyDown={e => handleKeyDown(e, () => commitV1('cartesian'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-blue-700 uppercase">Cartesian y</label>
+                    <input type="text" value={v1Str.y} onChange={e => setV1Str({...v1Str, y: e.target.value})} onBlur={() => commitV1('cartesian')} onKeyDown={e => handleKeyDown(e, () => commitV1('cartesian'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-blue-700 uppercase">Magnitude r</label>
+                    <input type="text" value={v1Str.r} onChange={e => setV1Str({...v1Str, r: e.target.value})} onBlur={() => commitV1('polar')} onKeyDown={e => handleKeyDown(e, () => commitV1('polar'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-blue-700 uppercase">Angle θ°</label>
+                    <input type="text" value={v1Str.th} onChange={e => setV1Str({...v1Str, th: e.target.value})} onBlur={() => commitV1('polar')} onKeyDown={e => handleKeyDown(e, () => commitV1('polar'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-3 bg-indigo-50 rounded border border-indigo-100">
-                <div className="font-semibold text-indigo-900 text-sm mb-2">Vector B</div>
-                <div className="flex gap-2">
-                  <input type="number" value={v2.x} onChange={e => setV2({...v2, x: parseFloat(e.target.value)||0})} className="w-1/2 p-1 border rounded text-sm" placeholder="x"/>
-                  <input type="number" value={v2.y} onChange={e => setV2({...v2, y: parseFloat(e.target.value)||0})} className="w-1/2 p-1 border rounded text-sm" placeholder="y"/>
+              <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                <div className="font-bold text-indigo-900 text-sm mb-3">Vector B</div>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-indigo-700 uppercase">Cartesian x</label>
+                    <input type="text" value={v2Str.x} onChange={e => setV2Str({...v2Str, x: e.target.value})} onBlur={() => commitV2('cartesian')} onKeyDown={e => handleKeyDown(e, () => commitV2('cartesian'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-indigo-700 uppercase">Cartesian y</label>
+                    <input type="text" value={v2Str.y} onChange={e => setV2Str({...v2Str, y: e.target.value})} onBlur={() => commitV2('cartesian')} onKeyDown={e => handleKeyDown(e, () => commitV2('cartesian'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-indigo-700 uppercase">Magnitude r</label>
+                    <input type="text" value={v2Str.r} onChange={e => setV2Str({...v2Str, r: e.target.value})} onBlur={() => commitV2('polar')} onKeyDown={e => handleKeyDown(e, () => commitV2('polar'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-indigo-700 uppercase">Angle θ°</label>
+                    <input type="text" value={v2Str.th} onChange={e => setV2Str({...v2Str, th: e.target.value})} onBlur={() => commitV2('polar')} onKeyDown={e => handleKeyDown(e, () => commitV2('polar'))} className="w-full p-2 border rounded text-sm bg-white text-slate-900 shadow-sm"/>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-3 bg-emerald-50 rounded border border-emerald-100">
-                <div className="font-semibold text-emerald-900 text-sm mb-1">Resultant R = A + B</div>
-                <div className="font-mono text-lg">({round(vR.x)}, {round(vR.y)})</div>
+              <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 shadow-sm">
+                <div className="font-bold text-emerald-900 text-xs mb-1 uppercase tracking-wider">Resultant R = A + B</div>
+                <div className="flex justify-between items-end font-mono">
+                  <div className="text-lg font-bold text-emerald-800">({round(vR.x)}, {round(vR.y)})</div>
+                  <div className="text-[10px] text-emerald-600 font-bold uppercase">r={round(Math.sqrt(vR.x**2 + vR.y**2))}, θ={round(toDegrees(Math.atan2(vR.y, vR.x)))}°</div>
+                </div>
               </div>
             </div>
 
             <div className="w-full md:w-2/3 flex justify-center">
-               <svg 
-                 ref={svgRef}
-                 width={size} 
-                 height={size} 
-                 className="bg-slate-50 border rounded touch-none"
-                 onPointerMove={handlePointerMove}
-                 onPointerUp={handlePointerUp}
-               >
-                 <line x1={0} y1={center} x2={size} y2={center} stroke="#cbd5e1" className="pointer-events-none"/>
-                 <line x1={center} y1={0} x2={center} y2={size} stroke="#cbd5e1" className="pointer-events-none"/>
-                 
-                 {/* Vector A */}
+               <svg ref={svgRef} width={size} height={size} className="bg-slate-50 border rounded-xl shadow-inner touch-none cursor-crosshair" onPointerMove={handlePointerMove} onPointerUp={() => setDragging(null)}>
+                 <line x1={0} y1={center} x2={size} y2={center} stroke="#cbd5e1" className="pointer-events-none"/><line x1={center} y1={0} x2={center} y2={size} stroke="#cbd5e1" className="pointer-events-none"/>
                  <line x1={center} y1={center} x2={center + v1.x * scale} y2={center - v1.y * scale} stroke="#3b82f6" strokeWidth="2" markerEnd="url(#arrow-blue)" className="pointer-events-none"/>
-                 <text x={center + v1.x * scale / 2} y={center - v1.y * scale / 2} className="fill-blue-600 text-xs font-bold pointer-events-none" dy="-5">A</text>
-                 <circle 
-                    cx={center + v1.x * scale} 
-                    cy={center - v1.y * scale} 
-                    r="8" 
-                    fill="rgba(59, 130, 246, 0.3)" 
-                    className="cursor-move hover:fill-blue-400"
-                    onPointerDown={(e) => handlePointerDown('v1', e)}
-                 />
-
-                 {/* Vector B (starts at A's head) */}
-                 <line 
-                   x1={center + v1.x * scale} 
-                   y1={center - v1.y * scale} 
-                   x2={center + (v1.x + v2.x) * scale} 
-                   y2={center - (v1.y + v2.y) * scale} 
-                   stroke="#6366f1" strokeWidth="2" markerEnd="url(#arrow-indigo)" 
-                   className="pointer-events-none"
-                 />
-                 <text x={center + (v1.x + v2.x/2) * scale} y={center - (v1.y + v2.y/2) * scale} className="fill-indigo-600 text-xs font-bold pointer-events-none" dy="-5">B</text>
-                 <circle 
-                    cx={center + (v1.x + v2.x) * scale} 
-                    cy={center - (v1.y + v2.y) * scale} 
-                    r="8" 
-                    fill="rgba(99, 102, 241, 0.3)" 
-                    className="cursor-move hover:fill-indigo-400"
-                    onPointerDown={(e) => handlePointerDown('v2', e)}
-                 />
-
-                 {/* Resultant */}
-                 <line x1={center} y1={center} x2={center + vR.x * scale} y2={center - vR.y * scale} stroke="#10b981" strokeWidth="3" opacity="0.5" markerEnd="url(#arrow-green)" className="pointer-events-none"/>
-                 <text x={center + vR.x * scale / 2 + 10} y={center - vR.y * scale / 2 + 10} className="fill-emerald-600 text-xs font-bold pointer-events-none">R</text>
-
+                 <circle cx={center + v1.x * scale} cy={center - v1.y * scale} r="10" fill="rgba(59, 130, 246, 0.2)" stroke="#3b82f6" className="cursor-move" onPointerDown={e => handlePointerDown('v1', e)}/>
+                 <line x1={center + v1.x * scale} y1={center - v1.y * scale} x2={center + (v1.x + v2.x) * scale} y2={center - (v1.y + v2.y) * scale} stroke="#6366f1" strokeWidth="2" markerEnd="url(#arrow-indigo)" className="pointer-events-none"/>
+                 <circle cx={center + (v1.x + v2.x) * scale} cy={center - (v1.y + v2.y) * scale} r="10" fill="rgba(99, 102, 241, 0.2)" stroke="#6366f1" className="cursor-move" onPointerDown={e => handlePointerDown('v2', e)}/>
+                 <line x1={center} y1={center} x2={center + vR.x * scale} y2={center - vR.y * scale} stroke="#10b981" strokeWidth="3" opacity="0.6" markerEnd="url(#arrow-green)" className="pointer-events-none"/>
                  <defs>
                    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" /></marker>
                    <marker id="arrow-indigo" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" /></marker>
@@ -171,82 +196,33 @@ const VectorAlgebra: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-8">
             <div className="w-full md:w-1/3 space-y-4">
               <h3 className="font-bold text-lg text-slate-800">Euclidean Distance</h3>
-              <p className="text-sm text-slate-600">Drag points P1 and P2 to calculate the distance.</p>
-              
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-2 border rounded bg-slate-50">
-                  <div className="text-xs font-bold text-slate-500 mb-1">Point 1</div>
-                  <input type="number" value={p1.x} onChange={e => setP1({...p1, x: parseFloat(e.target.value)||0})} className="w-full mb-1 p-1 text-sm border rounded" placeholder="x"/>
-                  <input type="number" value={p1.y} onChange={e => setP1({...p1, y: parseFloat(e.target.value)||0})} className="w-full p-1 text-sm border rounded" placeholder="y"/>
+                <div className="p-3 border rounded-lg bg-slate-50 border-slate-200">
+                  <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Point 1</div>
+                  <input type="text" value={p1Str.x} onChange={e => setP1Str({...p1Str, x: e.target.value})} onBlur={commitP1} onKeyDown={e => handleKeyDown(e, commitP1)} className="w-full mb-2 p-2 text-sm border rounded bg-white text-slate-900 shadow-sm" placeholder="x"/>
+                  <input type="text" value={p1Str.y} onChange={e => setP1Str({...p1Str, y: e.target.value})} onBlur={commitP1} onKeyDown={e => handleKeyDown(e, commitP1)} className="w-full p-2 text-sm border rounded bg-white text-slate-900 shadow-sm" placeholder="y"/>
                 </div>
-                <div className="p-2 border rounded bg-slate-50">
-                  <div className="text-xs font-bold text-slate-500 mb-1">Point 2</div>
-                  <input type="number" value={p2.x} onChange={e => setP2({...p2, x: parseFloat(e.target.value)||0})} className="w-full mb-1 p-1 text-sm border rounded" placeholder="x"/>
-                  <input type="number" value={p2.y} onChange={e => setP2({...p2, y: parseFloat(e.target.value)||0})} className="w-full p-1 text-sm border rounded" placeholder="y"/>
+                <div className="p-3 border rounded-lg bg-slate-50 border-slate-200">
+                  <div className="text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider">Point 2</div>
+                  <input type="text" value={p2Str.x} onChange={e => setP2Str({...p2Str, x: e.target.value})} onBlur={commitP2} onKeyDown={e => handleKeyDown(e, commitP2)} className="w-full mb-2 p-2 text-sm border rounded bg-white text-slate-900 shadow-sm" placeholder="x"/>
+                  <input type="text" value={p2Str.y} onChange={e => setP2Str({...p2Str, y: e.target.value})} onBlur={commitP2} onKeyDown={e => handleKeyDown(e, commitP2)} className="w-full p-2 text-sm border rounded bg-white text-slate-900 shadow-sm" placeholder="y"/>
                 </div>
               </div>
-
-              <div className="p-4 bg-orange-50 rounded border border-orange-200">
-                <div className="text-sm text-orange-800 font-semibold">Distance:</div>
-                <div className="text-2xl font-mono text-orange-900">{round(distance)}</div>
+              <div className="p-4 bg-orange-50 rounded-lg border border-orange-200 shadow-sm">
+                <div className="text-xs text-orange-800 font-bold uppercase tracking-widest mb-1">Distance Result</div>
+                <div className="text-3xl font-mono text-orange-900 font-bold">{round(distance)}</div>
               </div>
             </div>
-            
             <div className="w-full md:w-2/3 flex justify-center">
-               <svg 
-                 ref={svgRef}
-                 width={size} 
-                 height={size} 
-                 className="bg-slate-50 border rounded touch-none"
-                 onPointerMove={handlePointerMove}
-                 onPointerUp={handlePointerUp}
-               >
-                 <line x1={0} y1={center} x2={size} y2={center} stroke="#cbd5e1" className="pointer-events-none"/>
-                 <line x1={center} y1={0} x2={center} y2={size} stroke="#cbd5e1" className="pointer-events-none"/>
-                 
-                 {/* Line connecting P1 and P2 */}
-                 <line 
-                   x1={center + p1.x * scale} 
-                   y1={center - p1.y * scale} 
-                   x2={center + p2.x * scale} 
-                   y2={center - p2.y * scale} 
-                   stroke="#f97316" strokeWidth="2" strokeDasharray="5,5" 
-                   className="pointer-events-none"
-                 />
-
-                 {/* Points */}
-                 <circle 
-                   cx={center + p1.x * scale} 
-                   cy={center - p1.y * scale} 
-                   r="8" fill="#64748b" 
-                   className="cursor-move hover:fill-slate-600"
-                   onPointerDown={(e) => handlePointerDown('p1', e)}
-                 />
-                 <text x={center + p1.x * scale + 8} y={center - p1.y * scale} className="text-xs fill-slate-700 font-bold pointer-events-none">P1</text>
-                 
-                 <circle 
-                   cx={center + p2.x * scale} 
-                   cy={center - p2.y * scale} 
-                   r="8" fill="#64748b" 
-                   className="cursor-move hover:fill-slate-600"
-                   onPointerDown={(e) => handlePointerDown('p2', e)}
-                 />
-                 <text x={center + p2.x * scale + 8} y={center - p2.y * scale} className="text-xs fill-slate-700 font-bold pointer-events-none">P2</text>
+               <svg ref={svgRef} width={size} height={size} className="bg-slate-50 border rounded-xl shadow-inner touch-none cursor-crosshair" onPointerMove={handlePointerMove} onPointerUp={() => setDragging(null)}>
+                 <line x1={0} y1={center} x2={size} y2={center} stroke="#cbd5e1" className="pointer-events-none"/><line x1={center} y1={0} x2={center} y2={size} stroke="#cbd5e1" className="pointer-events-none"/>
+                 <line x1={center + p1.x * scale} y1={center - p1.y * scale} x2={center + p2.x * scale} y2={center - p2.y * scale} stroke="#f97316" strokeWidth="2" strokeDasharray="5,5" className="pointer-events-none"/>
+                 <circle cx={center + p1.x * scale} cy={center - p1.y * scale} r="10" fill="rgba(100, 116, 139, 0.2)" stroke="#64748b" className="cursor-move" onPointerDown={e => handlePointerDown('p1', e)}/>
+                 <circle cx={center + p2.x * scale} cy={center - p2.y * scale} r="10" fill="rgba(100, 116, 139, 0.2)" stroke="#64748b" className="cursor-move" onPointerDown={e => handlePointerDown('p2', e)}/>
                </svg>
             </div>
           </div>
         )}
-      </div>
-
-      <div className="border-t border-slate-200 bg-slate-50 p-4 text-center">
-        <h5 className="text-sm font-bold text-slate-700 mb-2">Mathematical Formula</h5>
-        <div className="inline-block bg-white px-6 py-3 rounded border border-slate-200 shadow-sm">
-           {activeTab === 'add' ? (
-             <code className="text-lg font-serif">{'\\vec{R} = \\vec{A} + \\vec{B} = (A_x + B_x, A_y + B_y)'}</code>
-           ) : (
-             <code className="text-lg font-serif">{'d = \\sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}'}</code>
-           )}
-        </div>
       </div>
     </div>
   );

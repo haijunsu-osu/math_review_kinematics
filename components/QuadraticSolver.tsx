@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { generateQuadraticData, solveQuadratic, round } from '../utils/mathUtils';
@@ -30,15 +31,15 @@ const QuadraticSolver: React.FC = () => {
                <div className="grid grid-cols-3 gap-2">
                  <div>
                    <label className="text-xs text-slate-500 font-bold">a</label>
-                   <input type="number" value={a} onChange={e => setA(parseFloat(e.target.value)||0)} className="w-full p-2 border rounded"/>
+                   <input type="number" value={a} onChange={e => setA(parseFloat(e.target.value)||0)} className="w-full p-2 border rounded bg-white text-slate-900"/>
                  </div>
                  <div>
                    <label className="text-xs text-slate-500 font-bold">b</label>
-                   <input type="number" value={b} onChange={e => setB(parseFloat(e.target.value)||0)} className="w-full p-2 border rounded"/>
+                   <input type="number" value={b} onChange={e => setB(parseFloat(e.target.value)||0)} className="w-full p-2 border rounded bg-white text-slate-900"/>
                  </div>
                  <div>
                    <label className="text-xs text-slate-500 font-bold">c</label>
-                   <input type="number" value={c} onChange={e => setC(parseFloat(e.target.value)||0)} className="w-full p-2 border rounded"/>
+                   <input type="number" value={c} onChange={e => setC(parseFloat(e.target.value)||0)} className="w-full p-2 border rounded bg-white text-slate-900"/>
                  </div>
                </div>
             </div>
